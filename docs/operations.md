@@ -24,7 +24,7 @@ Audio forwarding is disabled. DeX activation can nevertheless select its own med
 
 ## Process lifecycle
 
-The launcher locks `~/.cache/surface-dex/session.lock`, selects one authorised USB phone, pushes the helper and starts its `activate` mode. It reads `DEX_ACTIVATED_DISPLAY_ID` from the activation log; display IDs must never be hard-coded. It optionally resizes that display, starts a headless scrcpy keep-active session targeting display 0, and starts the DeX viewer.
+The launcher locks `~/.cache/linux-dex/session.lock`, selects one authorised USB phone, pushes the helper and starts its `activate` mode. It reads `DEX_ACTIVATED_DISPLAY_ID` from the activation log; display IDs must never be hard-coded. It optionally resizes that display, starts a headless scrcpy keep-active session targeting display 0, and starts the DeX viewer.
 
 The keep-active session has no video, audio, window or clipboard autosync. It supplies `--keep-active --turn-screen-off`. The viewer uses H.264, UHID input and the chosen frame-rate cap. The loop monitors both scrcpy and activation processes. Closing the viewer or interrupting the launcher stops its own processes, resets any timer-applied display override and requests DeX disconnect. It never kills the shared ADB server.
 
@@ -32,7 +32,7 @@ The repeating panel timer uses `cmd display power-off 0`; cleanup uses `cmd disp
 
 ## Troubleshooting
 
-Logs are printed at launch and saved as `~/.cache/surface-dex/session-*.log`. They contain activation and keep-active output, periodic display command output and disconnect results. Viewer output remains in the terminal. Logs may contain device identifiers; inspect before sharing.
+Logs are printed at launch and saved as `~/.cache/linux-dex/session-*.log`. They contain activation and keep-active output, periodic display command output and disconnect results. Viewer output remains in the terminal. Logs may contain device identifiers; inspect before sharing. Launchers before 2026-11-16 used `~/.cache/surface-dex/`; it is no longer read and can be deleted once its logs are no longer needed.
 
 If no USB phone is found, check the cable, USB debugging authorisation and `adb devices -l`. The launcher requires an authorised `device` entry with USB transport metadata. If several phones are connected, use `--serial SERIAL`. Close existing manual helper and keep-active sessions before launching; the launcher lock only covers other copies of this launcher.
 

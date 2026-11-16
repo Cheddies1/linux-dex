@@ -179,7 +179,7 @@ def main():
     parser.add_argument('--scrcpy', default='~/Applications/scrcpy-linux-x86_64-v5.0.1/scrcpy')
     parser.add_argument('--jar', default='~/Applications/ScrcpyDex/scrcpydex-server.jar')
     parser.add_argument('--timeout', type=float, default=30, help='Activation timeout in seconds (default: 30)')
-    parser.add_argument('--resolution', help='DeX virtual display size, e.g. 1800x1200 for Surface Go')
+    parser.add_argument('--resolution', help='DeX virtual display size, e.g. 1800x1200')
     parser.add_argument('--fullscreen', action='store_true', help='Start scrcpy in fullscreen mode')
     parser.add_argument('--max-fps', type=int, default=30, help='Video frame-rate cap (default: 30; try 60)')
     parser.add_argument('--phone-blank-interval', type=float, default=60,
@@ -200,7 +200,7 @@ def main():
         jar = Path(args.jar).expanduser().resolve()
         if not jar.is_file():
             raise RuntimeError(f'DeX helper not found: {jar}')
-        cache = Path.home() / '.cache' / 'surface-dex'
+        cache = Path.home() / '.cache' / 'linux-dex'
         cache.mkdir(parents=True, exist_ok=True)
         with (cache / 'session.lock').open('a') as lock:
             try:

@@ -11,7 +11,7 @@ There is no package installation or compilation step. Run `python3 dex.py --help
 
 ## Boundaries
 
-The development copy is `~/projects/personal/surface-dex` on deepthought. The deployed copy is `~/Applications/ScrcpyDex/dex.py` on the Surface. Edits here do not change the running Surface copy until it is copied and relaunched. The project moved out of the deepthought infrastructure repository on 2026-11-16.
+If you run an installed copy of `dex.py` (for example `~/Applications/ScrcpyDex/dex.py`), edits here do not affect it until you copy the file over and relaunch.
 
 Use argument lists for subprocesses and always select the intended serial. Own only processes started by this session. Preserve finite timeouts, process-group cleanup and the single-session lock. Both scrcpy children must use the chosen ADB executable. Do not replace panel blanking with Android sleep or power-key events: those can reproduce the original black DeX stream.
 
