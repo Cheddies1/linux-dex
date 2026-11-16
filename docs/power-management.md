@@ -2,13 +2,19 @@
 
 ## Tested configuration and result
 
-Tests on 2026-11-15 and 2026-11-16 used an S24 Ultra (SM-S928B), Android 17 / SDK 37 / One UI 90000, scrcpy 5.0.1 and a Surface Go running Linux Mint. The exact Mint release was not recorded. Surface decoding used OpenGL and VA-API. The Fold 4 remains untested.
+Tests on 2026-11-15 and 2026-11-16 used an S24 Ultra (SM-S928B), Android 17 / SDK 37 / One UI 90000, scrcpy 5.0.1 and a Surface Go running Linux Mint. The exact Mint release was not recorded. Surface decoding used OpenGL and VA-API. A Galaxy Z Fold4 was added on 2026-11-16; see below.
 
 Wired DeX worked at 1800x1200 fullscreen with Teams and Outlook in the work profile. Eddie reported substantially smoother interaction after raising the cap from 30 to 60 fps; delivered frame rate was not measured. The separate handset keep-active session kept a YouTube stream visible beyond the previous 60-second handset timeout during an approximately two-minute test. The physical panel stayed dark but touchpad input remained available. Closing the viewer restored the handset panel.
 
 On 2026-11-16 the launcher at commit `3fb9a6a` ran on the Surface with no path flags. It found scrcpy 5.0.1 in `~/Applications`, adb at `/usr/lib/android-sdk/platform-tools/adb` and the helper in `~/Applications/ScrcpyDex/`, whose SHA-256 matched the inspected revision. `--doctor` listed the phone as USB, ignored a wireless connection to the same phone and reported it awake and unlocked. A session at 1800x1200 fullscreen and 60 fps then ran normally.
 
 A later session the same day, run without `--resolution`, still streamed at 1800x1200. With a third session running, `wm size -d` on the ScrcpyDex display (unique ID `wifi:desktop:00:11:22:33:44:55`, physical 1920x1080) reported `Override size: 1800x1200` and `Override density: 160` against a physical density of 320. The launcher never sets density, so the density override comes from DeX or the helper. The size override persisting is kept as intended behaviour for a laptop that always uses the same size. With the Xreal One glasses then connected (display type `EXTERNAL`, unique ID `local:4626964578939494661`, 1920x1080), `wm size -d` reported no size override, so the ScrcpyDex size did not carry over to them. The glasses also showed `Override density: 160` against a physical density of 100, which supports DeX itself setting density.
+
+### Galaxy Z Fold4
+
+On 2026-11-16 a Galaxy Z Fold4 (SM-F936B), Android 16 / SDK 36 / One UI 80000, ran DeX through the launcher on the same Surface. The first session, without `--resolution`, used the DeX default of 1920x1080; a later session with `--resolution 1800x1200` worked, and `wm size -d` then reported that override, with `Override density: 160` against a physical 320, as on the S24 Ultra. The Fold's ScrcpyDex display reported unique ID `wifi:00:11:22:33:44:55`, which differs from the S24 Ultra's `wifi:desktop:00:11:22:33:44:55`; each phone keeps its own size. The lock-state check read `mWakefulness=Awake` and `KeyguardServiceDelegate` / `showing=false`, and the firmware advertises `cmd display power-off` and `power-reset`.
+
+The Fold has two built-in displays, both in display group 0: display 0 (904x2316, the cover screen while closed) and display 1 (1812x2176, the inner screen). The launcher's keep-active session and blanking timer target display 0 only. Both were OFF with the phone closed during the session. Whether unfolding lights display 1, and whether the timer then blanks it, is untested. The scrcpy capture display was in group 2 with the DeX display on the Fold, whereas the S24 Ultra placed it in group 0 during the same day's session; the launcher's keep-active workaround was not needed to explain the Fold result and was left unchanged.
 
 The later periodic re-blank timer has automated coverage and firmware command availability was checked, but its end-to-end phone behaviour remains unconfirmed. The earlier successful panel restoration used scrcpy alone, before the extra DisplayManager override was added.
 
@@ -42,7 +48,8 @@ Synthetic activity may delay automatic inactivity locking throughout the session
 - Close the viewer after the timer has fired; verify the phone panel restores and DeX ends.
 - Check normal handset inactivity timeout after exit and longer DeX use beyond the short acceptance test.
 - Exercise disconnect/reconnect and the documented display-reset recovery if automatic cleanup cannot reach the phone.
-- Test Fold 4 compatibility and pointer-setting persistence when needed.
+- Unfold the Fold4 during a session; check whether the inner screen (display 1) lights, whether the timer re-blanks it, and whether DeX keeps running.
+- Check pointer-setting persistence when needed.
 - Start with the phone locked and with it asleep; verify the launcher warns. The awake and unlocked case gave no warning on 2026-11-16.
 - Run `--reset` after a forced crash (kill the launcher with SIGKILL); verify the panel restores and DeX ends.
 

@@ -2,7 +2,7 @@
 
 Use a Linux laptop as a screen, keyboard and mouse for Samsung DeX over USB. A small Python launcher combines [ScrcpyDex](https://github.com/Aureliano021/ScrcpyDex) activation with [scrcpy](https://github.com/Genymobile/scrcpy), keeps the phone active with its panel dark, and cleans up when the desktop window closes.
 
-Tested on a Surface Go running Linux Mint and an S24 Ultra running Android 17, using scrcpy 5.0.1. Fullscreen at 1800x1200 works, with 60fps. Other device combinations are untested.
+Tested on a Surface Go running Linux Mint with an S24 Ultra running Android 17 and a Galaxy Z Fold4 running Android 16, using scrcpy 5.0.1. Fullscreen at 1800x1200 works, with 60fps. Other device combinations are untested.
 
 ## Setup
 
