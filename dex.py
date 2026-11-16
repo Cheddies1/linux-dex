@@ -307,15 +307,17 @@ def session(args, adb, scrcpy, jar, serial, log_path, log):
         keeper = subprocess.Popen([
             scrcpy, f'--serial={serial}', '--display-id=0',
             '--no-video', '--no-audio', '--no-window', '--no-clipboard-autosync',
-            '--keep-active', '--turn-screen-off',
-        ], stdout=log, stderr=subprocess.STDOUT, env=scrcpy_env, start_new_session=True)
-        print('Phone keep-active session started with the handset screen off. Stops when DeX closes.', flush=True)
+            '--keep-active',
+        ] + ([] if args.notick else ['--turn-screen-off']), stdout=log, stderr=subprocess.STDOUT,
+            env=scrcpy_env, start_new_session=True)
+        print('Phone keep-active session started with the handset screen '
+              f'{"left on" if args.notick else "off"}. Stops when DeX closes.', flush=True)
         viewer = subprocess.Popen([
             scrcpy, f'--serial={serial}', f'--display-id={display_id}',
             '--video-codec=h264', '--max-size=0' if args.resolution else '--max-size=1920', f'--max-fps={args.max_fps}',
             '--mouse=uhid', '--keyboard=uhid', '--no-audio', '--window-title=Samsung DeX',
         ] + (['--fullscreen'] if args.fullscreen else []) + args.scrcpy_arg, env=scrcpy_env, start_new_session=True)
-        blank_interval = args.phone_blank_interval
+        blank_interval = 0 if args.notick else args.phone_blank_interval
         next_blank = time.monotonic() + blank_interval
         if blank_interval:
             print(f'Phone panel re-blanks every {blank_interval:g}s, including during touch use.', flush=True)
@@ -402,6 +404,9 @@ def main():
     parser.add_argument('--max-fps', type=int, default=30, help='Video frame-rate cap (default: 30; try 60)')
     parser.add_argument('--phone-blank-interval', type=float, default=60,
                         help='Re-blank handset every N seconds, even during touch use (default: 60; 0 disables)')
+    parser.add_argument('--notick', action='store_true',
+                        help='Leave the phone screen alone: no screen-off at launch and no repeat blanking '
+                             '(for example while charging); overrides --phone-blank-interval')
     parser.add_argument('--scrcpy-arg', action='append', default=[], metavar='ARG',
                         help='Extra option for the DeX viewer only; repeat as needed, '
                              'e.g. --scrcpy-arg=--render-driver=opengl')

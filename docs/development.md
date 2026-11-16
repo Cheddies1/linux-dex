@@ -19,7 +19,7 @@ The launcher currently supports Linux (`fcntl`, POSIX signals and process groups
 
 ## Automated coverage
 
-The 18 tests cover default and explicit frame-rate options, viewer-only `--scrcpy-arg` passthrough, dynamic display selection, resize/fullscreen, missing, unauthorised and `no permissions` phones, libusb listings without a `usb:` field, ambiguous devices, wireless, mDNS and emulator entries, dependency discovery from `~/Applications` with the scrcpy-bundled adb, the scrcpy version gate, helper upload/activation failures, activator and keep-active failure, viewer exit, descendants left in a viewer's process group, duplicate launches, Ctrl+C, invalid arguments, periodic display-0 blanking, timer failure/disable, reset on exit, `--doctor`, `--reset`, the locked-phone warning and log pruning. Fake long-running children are checked for process leaks.
+The 19 tests cover default and explicit frame-rate options, viewer-only `--scrcpy-arg` passthrough, dynamic display selection, resize/fullscreen, missing, unauthorised and `no permissions` phones, libusb listings without a `usb:` field, ambiguous devices, wireless, mDNS and emulator entries, dependency discovery from `~/Applications` with the scrcpy-bundled adb, the scrcpy version gate, helper upload/activation failures, activator and keep-active failure, viewer exit, descendants left in a viewer's process group, duplicate launches, Ctrl+C, invalid arguments, periodic display-0 blanking, timer failure/disable, `--notick`, reset on exit, `--doctor`, `--reset`, the locked-phone warning and log pruning. Fake long-running children are checked for process leaks.
 
 GitHub Actions (`.github/workflows/tests.yml`) runs the mock suite on Ubuntu with Python 3.10 and 3.14 on every push and pull request.
 

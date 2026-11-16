@@ -34,7 +34,7 @@ python3 ~/Applications/ScrcpyDex/dex.py --resolution 1800x1200 --fullscreen --ma
 
 Left Alt releases/captures the mouse. Alt+f toggles fullscreen. Close the outer window or press Ctrl+C in the launcher terminal to end the session. If DeX redirects audio, select your Bluetooth headphones again in its media output panel.
 
-The phone panel is switched off at launch and re-blanked every 60 seconds. This is a repeating timer, including during phone use, rather than a minute measured from your last touch. Use `--phone-blank-interval 120` to change it or `--phone-blank-interval 0` to disable repeat blanking. Keeping Android active may delay automatic inactivity locking during the session.
+The phone panel is switched off at launch and re-blanked every 60 seconds. This is a repeating timer, including during phone use, rather than a minute measured from your last touch. Use `--phone-blank-interval 120` to change it or `--phone-blank-interval 0` to disable repeat blanking. Use `--notick` to leave the phone screen alone entirely, for example while it is charging: it is neither switched off at launch nor re-blanked. Keeping Android active may delay automatic inactivity locking during the session.
 
 The original keep-active and panel-restoration behaviour passed the wired test. The newer repeating blanking timer, `--doctor`, `--reset`, the locked-phone warning and dependency discovery have automated coverage but still need a real-phone test.
 
@@ -54,7 +54,7 @@ Run from this project directory:
 python3 -m unittest discover -s . -p 'test_dex.py' -v
 ```
 
-The 18 tests use fake ADB/scrcpy processes and require no phone. They check launch options, dependency discovery, device states, failures, timer behaviour, diagnostics, recovery and process cleanup. GitHub Actions runs them on every push. They do not establish Samsung firmware compatibility or real display behaviour.
+The 19 tests use fake ADB/scrcpy processes and require no phone. They check launch options, dependency discovery, device states, failures, timer behaviour, diagnostics, recovery and process cleanup. GitHub Actions runs them on every push. They do not establish Samsung firmware compatibility or real display behaviour.
 
 - [Implementation and contribution notes](docs/development.md)
 - [Sleep diagnosis, evidence and remaining checks](docs/power-management.md)

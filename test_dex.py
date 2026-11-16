@@ -326,6 +326,16 @@ class LauncherTests(unittest.TestCase):
         self.assertIn('timer disabled', result.stderr)
         self.assertIn('power-reset', kinds)
 
+    def test_notick_leaves_phone_screen_alone(self):
+        result, kinds = self.run_case('blank-watch', ['--notick', '--phone-blank-interval', '0.1'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        keeper = next(e[1] for e in self.read_events() if e[0] == 'keeper')
+        self.assertIn('--keep-active', keeper)
+        self.assertNotIn('--turn-screen-off', keeper)
+        self.assertNotIn('power-off', kinds)
+        self.assertNotIn('power-reset', kinds)
+        self.assertIn('screen left on', result.stdout)
+
     def test_invalid_panel_blank_interval(self):
         for interval in ('-1', 'nan', 'inf'):
             with self.subTest(interval=interval):
