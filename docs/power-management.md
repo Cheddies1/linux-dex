@@ -14,9 +14,9 @@ A later session the same day, run without `--resolution`, still streamed at 1800
 
 On 2026-11-16 a Galaxy Z Fold4 (SM-F936B), Android 16 / SDK 36 / One UI 80000, ran DeX through the launcher on the same Surface. The first session, without `--resolution`, used the DeX default of 1920x1080; a later session with `--resolution 1800x1200` worked, and `wm size -d` then reported that override, with `Override density: 160` against a physical 320, as on the S24 Ultra. The Fold's ScrcpyDex display reported unique ID `wifi:00:11:22:33:44:55`, which differs from the S24 Ultra's `wifi:desktop:00:11:22:33:44:55`; each phone keeps its own size. The lock-state check read `mWakefulness=Awake` and `KeyguardServiceDelegate` / `showing=false`, and the firmware advertises `cmd display power-off` and `power-reset`.
 
-The Fold has two built-in displays, both in display group 0: display 0 (904x2316, the cover screen while closed) and display 1 (1812x2176, the inner screen). The launcher's keep-active session and blanking timer target display 0 only. Both were OFF with the phone closed during the session. With the Fold4 unfolded during a session, the inner screen was usable and DeX kept streaming without interruption. The next 60-second tick blanked the inner screen too, so `cmd display power-off 0` affects whichever panel is active; folding and reopening woke it again. This is kept as intended behaviour. `--notick` was added the same day for sessions where the phone screen should stay on, for example while charging; it has mock coverage only. The scrcpy capture display was in group 2 with the DeX display on the Fold, whereas the S24 Ultra placed it in group 0 during the same day's session; the launcher's keep-active workaround was not needed to explain the Fold result and was left unchanged.
+The Fold has two built-in displays, both in display group 0: display 0 (904x2316, the cover screen while closed) and display 1 (1812x2176, the inner screen). The launcher's keep-active session and blanking timer target display 0 only. Both were OFF with the phone closed during the session. With the Fold4 unfolded during a session, the inner screen was usable and DeX kept streaming without interruption. The next 60-second tick blanked the inner screen too, so `cmd display power-off 0` affects whichever panel is active; folding and reopening woke it again. This is kept as intended behaviour. `--notick` was added the same day for sessions where the phone screen should stay on, for example while charging; it has mock coverage only. During the Fold4 session the scrcpy capture display was in display group 2 with the DeX display; during the S24 Ultra session the same day it was in group 0. The launcher behaves the same on both.
 
-The later periodic re-blank timer has automated coverage and firmware command availability was checked, but its end-to-end phone behaviour remains unconfirmed. The earlier successful panel restoration used scrcpy alone, before the extra DisplayManager override was added.
+The periodic re-blank timer has automated coverage, and on 2026-11-16 the Fold4 confirmed on a real phone that a tick blanks the active panel while DeX keeps streaming. Panel restoration after the timer has fired is not yet confirmed: the earlier successful restoration used scrcpy alone, before the extra DisplayManager override was added.
 
 ## Why charging stay-awake failed
 
@@ -44,7 +44,7 @@ Synthetic activity may delay automatic inactivity locking throughout the session
 
 ## Remaining device checks
 
-- Wake the handset during a wired session with the default timer; verify it re-blanks within 60 seconds while DeX continues playing.
+- On the S24 Ultra, wake the handset during a wired session with the default timer; verify it re-blanks within 60 seconds while DeX continues playing. The Fold4 passed this on 2026-11-16.
 - Close the viewer after the timer has fired; verify the phone panel restores and DeX ends.
 - Check normal handset inactivity timeout after exit and longer DeX use beyond the short acceptance test.
 - Exercise disconnect/reconnect and the documented display-reset recovery if automatic cleanup cannot reach the phone.

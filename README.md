@@ -36,7 +36,7 @@ Left Alt releases/captures the mouse. Alt+f toggles fullscreen. Close the outer 
 
 The phone panel is switched off at launch and re-blanked every 60 seconds. This is a repeating timer, including during phone use, rather than a minute measured from your last touch. Use `--phone-blank-interval 120` to change it or `--phone-blank-interval 0` to disable repeat blanking. Use `--notick` to leave the phone screen alone entirely, for example while it is charging: it is neither switched off at launch nor re-blanked. Keeping Android active may delay automatic inactivity locking during the session.
 
-The original keep-active and panel-restoration behaviour passed the wired test. The newer repeating blanking timer, `--doctor`, `--reset`, the locked-phone warning and dependency discovery have automated coverage but still need a real-phone test.
+The keep-active session, panel restoration, the repeating blanking timer, dependency discovery and `--doctor` have worked on real phones. `--reset`, `--notick`, the locked-phone warning for a locked or asleep phone, and panel restoration after the timer has fired have automated coverage but still need a real-phone test.
 
 If a session crashes and leaves the phone in DeX or with its panel dark, reconnect it and run `python3 ~/Applications/ScrcpyDex/dex.py --reset`.
 
