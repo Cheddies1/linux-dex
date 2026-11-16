@@ -8,4 +8,4 @@ Run tests from the project root: `python3 -m unittest discover -s . -p 'test_dex
 
 Preserve USB serial selection, bounded subprocesses, session-owned process cleanup, the single-session lock and shared ADB server. Phone sleep and panel-off are different: never substitute a sleep/power key for display-only blanking. No policy-setting changes or automatic unlocking are implemented.
 
-Update the owning docs when commands, defaults, recovery or device evidence change. Keep mock-test results separate from real-phone validation. Do not bundle device dumps, credentials or dependency binaries. Do not invent a licence or configure a remote without Eddie's instruction.
+Update the owning docs when commands, defaults, recovery or device evidence change. Keep mock-test results separate from real-phone validation. Do not bundle device dumps, credentials or dependency binaries. The project is MIT-licensed; do not change the licence or configure a remote without Eddie's instruction.

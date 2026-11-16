@@ -58,3 +58,7 @@ The 18 tests use fake ADB/scrcpy processes and require no phone. They check laun
 
 - [Implementation and contribution notes](docs/development.md)
 - [Sleep diagnosis, evidence and remaining checks](docs/power-management.md)
+
+## Licence
+
+MIT; see [LICENSE](LICENSE). scrcpy and ScrcpyDex are separate projects under their own licences and are not included here.
