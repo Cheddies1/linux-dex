@@ -2,11 +2,13 @@
 
 ## Dependencies
 
-Python 3 and ADB must be available on the Linux client. Linux Mint's `android-sdk-platform-tools-common` supplies Android USB rules. The original APT ADB worked over USB but lacked `adb pair`; the Surface subsequently used Google's standalone Platform Tools at `~/Applications/platform-tools/adb` for wireless diagnosis. Use `--adb ~/Applications/platform-tools/adb` to select it explicitly. The launcher passes that executable to both scrcpy processes through `ADB`.
+Python 3 and ADB must be available on the Linux client. Linux Mint's `android-sdk-platform-tools-common` supplies Android USB rules. The original APT ADB worked over USB but lacked `adb pair`; the Surface subsequently used Google's standalone Platform Tools at `~/Applications/platform-tools/adb` for wireless diagnosis. Use `--adb ~/Applications/platform-tools/adb` to select it explicitly. Without `--adb`, the launcher uses `adb` on `PATH`, then the `adb` inside the scrcpy release. It passes the chosen executable to both scrcpy processes through `ADB`, so all of them share one ADB server.
 
-The tested scrcpy release is [5.0.1](https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1). Extract its complete Linux x86_64 release into `~/Applications/`; the executable needs the accompanying server and release files. Changing versions needs a fresh device test, especially keep-active and panel cleanup.
+The tested scrcpy release is [5.0.1](https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1). Extract its complete release into `~/Applications/`; the executable needs the accompanying server and release files. Without `--scrcpy`, the launcher picks the newest `~/Applications/scrcpy-*/scrcpy` by the version in the folder name, then `scrcpy` on `PATH`. It runs `scrcpy --version` and refuses anything older than 5.0.1, which lacks `--keep-active`; distribution packages are often older. Newer versions are accepted but untested. Changing versions needs a fresh device test, especially keep-active and panel cleanup.
 
-The [ScrcpyDex helper inspected during setup](https://github.com/Aureliano021/ScrcpyDex/blob/fd3b53c1379352fd71d0b9216b2f375bf2d72427/server/scrcpydex-server.jar) is 13,291 bytes, from revision `fd3b53c1379352fd71d0b9216b2f375bf2d72427`, with SHA-256 `c57d704ab4116fc43e0370d746455c6c80170391f17082561d80cc926ab0c15c`. Eddie's working download originally came from the moving main branch; its checksum has not been checked on the Surface. Retain the working copy. Neither dependency is vendored here, and upstream licences govern their use and redistribution.
+Without `--jar`, the helper is taken from `scrcpydex-server.jar` next to `dex.py`, then `~/Applications/ScrcpyDex/scrcpydex-server.jar`. The repository ignores a jar placed next to `dex.py`.
+
+The [ScrcpyDex helper inspected during setup](https://github.com/Aureliano021/ScrcpyDex/blob/fd3b53c1379352fd71d0b9216b2f375bf2d72427/server/scrcpydex-server.jar) is 13,291 bytes, from revision `fd3b53c1379352fd71d0b9216b2f375bf2d72427`, with SHA-256 `c57d704ab4116fc43e0370d746455c6c80170391f17082561d80cc926ab0c15c`. Eddie's working download originally came from the moving main branch; its checksum has not been checked on the Surface. Retain the working copy. `--doctor` reports whether the helper in use matches that checksum; a mismatch is a warning, not a failure. Neither dependency is vendored here, and upstream licences govern their use and redistribution.
 
 ```bash
 sha256sum ~/Applications/ScrcpyDex/scrcpydex-server.jar
@@ -14,7 +16,7 @@ sha256sum ~/Applications/ScrcpyDex/scrcpydex-server.jar
 
 ## Launch and controls
 
-Unlock the handset before launch. Starting locked produced a blank viewer until Eddie woke and unlocked the phone. Automatic unlocking is not implemented.
+Unlock the handset before launch. Starting locked produced a blank viewer until Eddie woke and unlocked the phone. Automatic unlocking is not implemented. Before activation the launcher reads `dumpsys power` (`mWakefulness`) and `dumpsys window policy` (`KeyguardServiceDelegate` `showing=`), and warns if the phone looks asleep or locked. It never blocks a launch, and stays silent if the dumps cannot be read. This heuristic has mock coverage only; it has not been checked against real One UI output.
 
 The Surface's tested display size is 1800x1200 (3:2). `--resolution 1800x1200` applies `wm size WIDTHxHEIGHT -d DISPLAY_ID` to the detected DeX display and removes scrcpy's capture size cap. It does not resize the handset display or change density. Without this option, DeX keeps its own resolution and capture is capped at 1920 pixels on the longest side. Window decorations can still introduce bars outside fullscreen.
 
@@ -32,9 +34,13 @@ The repeating panel timer uses `cmd display power-off 0`; cleanup uses `cmd disp
 
 ## Troubleshooting
 
-Logs are printed at launch and saved as `~/.cache/linux-dex/session-*.log`. They contain activation and keep-active output, periodic display command output and disconnect results. Viewer output remains in the terminal. Logs may contain device identifiers; inspect before sharing. Launchers before 2026-11-16 used `~/.cache/surface-dex/`; it is no longer read and can be deleted once its logs are no longer needed.
+Run `dex.py --doctor` first. It reports the adb, scrcpy and helper in use, the scrcpy version, the helper checksum, each ADB device with its state and whether it counts as USB, whether a launcher is running, and whether the phone looks ready.
 
-If no USB phone is found, check the cable, USB debugging authorisation and `adb devices -l`. The launcher requires an authorised `device` entry with USB transport metadata. If several phones are connected, use `--serial SERIAL`. Close existing manual helper and keep-active sessions before launching; the launcher lock only covers other copies of this launcher.
+Logs are printed at launch and saved as `~/.cache/linux-dex/session-*.log`, or under `$XDG_CACHE_HOME/linux-dex/` when that is set. Only the newest 20 are kept. They contain activation and keep-active output, periodic display command output and disconnect results. Viewer output remains in the terminal. Logs may contain device identifiers; inspect before sharing. Launchers before 2026-11-16 used `~/.cache/surface-dex/`; it is no longer read and can be deleted once its logs are no longer needed.
+
+If no USB phone is found, check the cable, USB debugging authorisation and `adb devices -l`. The launcher treats an entry as USB if it carries a `usb:` field or, because ADB's libusb backend omits that field, if its serial is not a network address, mDNS name or emulator. It requires that entry to be in the `device` state. `unauthorized` means the phone has not accepted this computer's USB debugging prompt. `no permissions` means this Linux user cannot open the USB device: install Android udev rules (for example `android-sdk-platform-tools-common`), check `plugdev` membership and reconnect. If several phones are connected, use `--serial SERIAL`. Close existing manual helper and keep-active sessions before launching; the launcher lock only covers other copies of this launcher.
+
+If the phone stays in DeX or its panel stays dark after a crash, run `dex.py --reset` (add `--serial SERIAL` if several phones are connected). It takes the launcher lock, restores the handset panel with `cmd display power-reset 0`, asks the helper to disconnect DeX, and reports which step failed. The equivalent manual commands follow.
 
 If the phone stays in DeX after a crash, run the following with only the intended phone connected, or add `-s SERIAL` after `adb`:
 

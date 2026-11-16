@@ -39,5 +39,8 @@ Synthetic activity may delay automatic inactivity locking throughout the session
 - Check normal handset inactivity timeout after exit and longer DeX use beyond the short acceptance test.
 - Exercise disconnect/reconnect and the documented display-reset recovery if automatic cleanup cannot reach the phone.
 - Test Fold 4 compatibility and pointer-setting persistence when needed.
+- Start with the phone locked and with it asleep; verify the launcher warns, and that an unlocked, awake phone gives no warning.
+- Run `--reset` after a forced crash (kill the launcher with SIGKILL); verify the panel restores and DeX ends.
+- Check whether `wm size` set by `--resolution` persists into a later session run without it. Add `wm size reset -d DISPLAY_ID` to cleanup only if it does.
 
 Update this record only from observed results. Firmware updates may change the helper's Samsung APIs, display grouping or shell power commands.

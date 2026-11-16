@@ -11,7 +11,7 @@ import unittest
 
 
 FAKE = r'''#!/usr/bin/env python3
-import json, os, signal, sys, time
+import json, os, signal, subprocess, sys, time
 from pathlib import Path
 mode = os.environ.get('CASE', 'ok')
 args = sys.argv[1:]
@@ -24,14 +24,28 @@ def stop(signum, frame):
 signal.signal(signal.SIGTERM, stop)
 signal.signal(signal.SIGINT, stop)
 if Path(sys.argv[0]).name == 'adb':
-    if args == ['devices', '-l']:
+    if args == ['version']:
+        print('Android Debug Bridge version 1.0.41')
+    elif args == ['devices', '-l']:
         print('List of devices attached')
-        if mode != 'none':
+        if mode == 'no-permissions':
+            print('PHONE no permissions (missing udev rules? user is in the plugdev group); '
+                  'see [http://developer.android.com/tools/device.html] usb:1-1 transport_id:1')
+        elif mode == 'libusb':
+            print('PHONE device product:test model:test device:test transport_id:1')
+        elif mode != 'none':
             state = 'unauthorized' if mode == 'unauthorized' else 'device'
             print('PHONE ' + state + ' usb:1-1 product:test model:test')
         if mode == 'multiple':
             print('PHONE2 device usb:1-2 product:test model:test')
         print('192.0.2.1:5555 device product:test model:test')
+        print('adb-PHONE3-abc._adb-tls-connect._tcp device product:test model:test')
+        print('emulator-5554 device product:test model:test')
+    elif args[2:4] == ['shell', 'dumpsys']:
+        if args[4] == 'power':
+            print('mWakefulness=' + ('Asleep' if mode == 'locked' else 'Awake'))
+        else:
+            print('KeyguardServiceDelegate\n  showing=' + ('true' if mode == 'locked' else 'false'))
     elif 'push' in args:
         event('push')
         sys.exit(1 if mode == 'push-fail' else 0)
@@ -60,6 +74,9 @@ if Path(sys.argv[0]).name == 'adb':
     else:
         sys.exit(2)
 else:
+    if args == ['--version']:
+        print('scrcpy ' + ('2.4' if mode == 'old-scrcpy' else '5.0.1') + ' <https://github.com/Genymobile/scrcpy>')
+        sys.exit(0)
     if os.environ.get('ADB') != str(Path(sys.argv[0]).with_name('adb')):
         sys.exit(9)
     if '--keep-active' in args:
@@ -72,6 +89,13 @@ else:
         while True:
             time.sleep(0.1)
     event('viewer')
+    if mode == 'orphan':
+        # Leave a SIGTERM-ignoring descendant in the viewer's process group, then exit.
+        child = subprocess.Popen([sys.executable, '-c',
+                                  'import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(60)'])
+        with open(os.environ['EVENTS'], 'a') as f:
+            f.write(json.dumps(['child', [], child.pid]) + '\n')
+        sys.exit(0)
     if mode in ('hold', 'activator-dies', 'keeper-fail', 'keeper-dies'):
         while True:
             time.sleep(0.1)
@@ -91,7 +115,9 @@ class LauncherTests(unittest.TestCase):
             path.chmod(0o755)
         (self.root / 'helper.jar').touch()
         self.events = self.root / 'events'
-        self.env = dict(os.environ, HOME=str(self.root), EVENTS=str(self.events))
+        self.cache = self.root / 'xdg-cache' / 'linux-dex'
+        self.env = dict(os.environ, HOME=str(self.root), EVENTS=str(self.events),
+                        XDG_CACHE_HOME=str(self.root / 'xdg-cache'))
         self.command = [sys.executable, str(Path(__file__).with_name('dex.py')),
                         '--adb', str(self.root / 'adb'), '--scrcpy', str(self.root / 'scrcpy'),
                         '--jar', str(self.root / 'helper.jar'), '--timeout', '0.9']
@@ -103,7 +129,7 @@ class LauncherTests(unittest.TestCase):
         result = subprocess.run(self.command + list(extra), env=dict(self.env, CASE=case),
                                 capture_output=True, text=True, timeout=12)
         for kind, args, pid in self.read_events():
-            if kind in ('activate', 'viewer', 'keeper'):
+            if kind in ('activate', 'viewer', 'keeper', 'child'):
                 with self.assertRaises(ProcessLookupError, msg=f'leaked {kind}: {pid}'):
                     os.kill(pid, 0)
         return result, [e[0] for e in self.read_events()]
@@ -144,6 +170,87 @@ class LauncherTests(unittest.TestCase):
                 if case.startswith('keeper-'):
                     self.assertIn('Phone keep-active session exited with status 8', result.stderr)
 
+    def test_device_states(self):
+        for case, message in (('no-permissions', 'udev rules'), ('unauthorized', 'USB debugging prompt')):
+            with self.subTest(case=case):
+                self.events.write_text('')
+                result, kinds = self.run_case(case)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertNotIn('Phone is no', result.stderr)
+                self.assertNotIn('push', kinds)
+        self.events.write_text('')
+        result, kinds = self.run_case('libusb')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--serial=PHONE', next(e[1] for e in self.read_events() if e[0] == 'viewer'))
+
+    def test_viewer_descendants_stopped(self):
+        result, kinds = self.run_case('orphan')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('child', kinds)
+
+    def test_dependency_discovery(self):
+        bundle = self.root / 'Applications' / 'scrcpy-linux-x86_64-v5.0.1'
+        helper = self.root / 'Applications' / 'ScrcpyDex'
+        bin_dir = self.root / 'bin'
+        for directory in (bundle, helper, bin_dir):
+            directory.mkdir(parents=True)
+        for name in ('adb', 'scrcpy'):
+            (bundle / name).write_text(FAKE)
+            (bundle / name).chmod(0o755)
+        (helper / 'scrcpydex-server.jar').touch()
+        (bin_dir / 'python3').symlink_to(sys.executable)
+        env = dict(self.env, CASE='ok', PATH=str(bin_dir))
+        result = subprocess.run([sys.executable, str(Path(__file__).with_name('dex.py')), '--timeout', '0.9'],
+                                env=env, capture_output=True, text=True, timeout=12)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f'adb: {bundle / "adb"}', result.stdout)
+        self.assertIn('scrcpy 5.0.1', result.stdout)
+        self.assertIn('viewer', [e[0] for e in self.read_events()])
+        self.assertEqual(len(list(self.cache.glob('session-*.log'))), 1)
+
+    def test_old_scrcpy_rejected(self):
+        result, kinds = self.run_case('old-scrcpy')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('scrcpy 2.4.0; 5.0.1 or newer is required', result.stderr)
+        self.assertNotIn('push', kinds)
+
+    def test_doctor(self):
+        result, kinds = self.run_case('ok', ['--doctor'])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        for text in ('(5.0.1)', 'Android Debug Bridge', 'differs from the inspected revision',
+                     'PHONE ready, awake and unlocked', '192.0.2.1:5555 device (not USB, ignored)',
+                     'emulator-5554 device (not USB, ignored)', 'no launcher running'):
+            self.assertIn(text, result.stdout)
+        self.assertEqual(kinds, [])
+        result, kinds = self.run_case('no-permissions', ['--doctor'])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('PROBLEM: Phone PHONE is no permissions', result.stdout)
+
+    def test_reset(self):
+        result, kinds = self.run_case('ok', ['--reset'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(kinds, ['power-reset', 'disconnect'])
+
+    def test_locked_phone_warning(self):
+        result, kinds = self.run_case('locked')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('looks asleep or locked', result.stderr)
+        self.assertIn('viewer', kinds)
+        result, kinds = self.run_case('ok')
+        self.assertNotIn('looks asleep or locked', result.stderr)
+
+    def test_log_pruning(self):
+        self.cache.mkdir(parents=True)
+        for index in range(25):
+            (self.cache / f'session-20260101-0000{index:02d}-x.log').touch()
+        result, kinds = self.run_case('ok')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        logs = sorted(path.name for path in self.cache.glob('session-*.log'))
+        self.assertEqual(len(logs), 20)
+        self.assertNotIn('session-20260101-000005-x.log', logs)
+        self.assertIn('session-20260101-000006-x.log', logs)
+
     def test_serial_is_exact(self):
         result, kinds = self.run_case('ok', ['--serial', 'PHON'])
         self.assertNotEqual(result.returncode, 0)
@@ -151,8 +258,10 @@ class LauncherTests(unittest.TestCase):
 
     def test_resolution_fullscreen_and_resize_failure(self):
         extra = ['--resolution', '1800x1200', '--fullscreen', '--max-fps', '60']
-        result, kinds = self.run_case('ok', extra)
+        result, kinds = self.run_case('ok', extra + ['--scrcpy-arg=--render-driver=opengl'])
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--render-driver=opengl', next(e[1] for e in self.read_events() if e[0] == 'viewer'))
+        self.assertNotIn('--render-driver=opengl', next(e[1] for e in self.read_events() if e[0] == 'keeper'))
         resize = next(e[1] for e in self.read_events() if e[0] == 'resize')
         self.assertEqual(resize, ['-s', 'PHONE', 'shell', 'wm', 'size', '1800x1200', '-d', '17'])
         viewer = next(e[1] for e in self.read_events() if e[0] == 'viewer')
