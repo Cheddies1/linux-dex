@@ -1,4 +1,5 @@
 """Exercise launcher lifecycle without a phone or an ADB server."""
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -43,6 +44,7 @@ if Path(sys.argv[0]).name == 'adb':
         print('emulator-5554 device product:test model:test')
     elif args[2:4] == ['shell', 'dumpsys']:
         if args[4] == 'power':
+            print('mWakefulness=1')
             print('mWakefulness=' + ('Asleep' if mode == 'locked' else 'Awake'))
         else:
             print('KeyguardServiceDelegate\n  showing=' + ('true' if mode == 'locked' else 'false'))
@@ -54,6 +56,9 @@ if Path(sys.argv[0]).name == 'adb':
         sys.exit(1 if mode == 'resize-fail' else 0)
     elif args[2:5] == ['shell', 'cmd', 'display']:
         event(args[5])
+        if mode == 'reset-fail' and args[5] == 'power-reset':
+            print('power-reset refused', file=sys.stderr)
+            sys.exit(1)
         sys.exit(1 if mode == 'blank-fail' and args[5] == 'power-off' else 0)
     elif args[-1].endswith(' disconnect'):
         event('disconnect')
@@ -226,11 +231,27 @@ class LauncherTests(unittest.TestCase):
         result, kinds = self.run_case('no-permissions', ['--doctor'])
         self.assertEqual(result.returncode, 1)
         self.assertIn('PROBLEM: Phone PHONE is no permissions', result.stdout)
+        result, kinds = self.run_case('old-scrcpy', ['--doctor'])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('(2.4.0); 5.0.1 or newer is required', result.stdout)
+        self.cache.mkdir(parents=True, exist_ok=True)
+        with (self.cache / 'session.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result, kinds = self.run_case('ok', ['--doctor'])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('PROBLEM:', result.stdout)
+        self.assertIn('a launcher is running', result.stdout)
 
     def test_reset(self):
         result, kinds = self.run_case('ok', ['--reset'])
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(kinds, ['power-reset', 'disconnect'])
+        self.events.write_text('')
+        result, kinds = self.run_case('reset-fail', ['--reset'])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Phone panel reset failed', result.stderr)
+        self.assertIn('power-reset refused', result.stderr)
+        self.assertIn('disconnect', kinds)
 
     def test_locked_phone_warning(self):
         result, kinds = self.run_case('locked')

@@ -6,6 +6,8 @@ Tests on 2026-11-15 and 2026-11-16 used an S24 Ultra (SM-S928B), Android 17 / SD
 
 Wired DeX worked at 1800x1200 fullscreen with Teams and Outlook in the work profile. Eddie reported substantially smoother interaction after raising the cap from 30 to 60 fps; delivered frame rate was not measured. The separate handset keep-active session kept a YouTube stream visible beyond the previous 60-second handset timeout during an approximately two-minute test. The physical panel stayed dark but touchpad input remained available. Closing the viewer restored the handset panel.
 
+On 2026-11-16 the launcher at commit `3fb9a6a` ran on the Surface with no path flags. It found scrcpy 5.0.1 in `~/Applications`, adb at `/usr/lib/android-sdk/platform-tools/adb` and the helper in `~/Applications/ScrcpyDex/`, whose SHA-256 matched the inspected revision. `--doctor` listed the phone as USB, ignored a wireless connection to the same phone and reported it awake and unlocked. A session at 1800x1200 fullscreen and 60 fps then ran normally.
+
 The later periodic re-blank timer has automated coverage and firmware command availability was checked, but its end-to-end phone behaviour remains unconfirmed. The earlier successful panel restoration used scrcpy alone, before the extra DisplayManager override was added.
 
 ## Why charging stay-awake failed
@@ -39,7 +41,7 @@ Synthetic activity may delay automatic inactivity locking throughout the session
 - Check normal handset inactivity timeout after exit and longer DeX use beyond the short acceptance test.
 - Exercise disconnect/reconnect and the documented display-reset recovery if automatic cleanup cannot reach the phone.
 - Test Fold 4 compatibility and pointer-setting persistence when needed.
-- Start with the phone locked and with it asleep; verify the launcher warns, and that an unlocked, awake phone gives no warning.
+- Start with the phone locked and with it asleep; verify the launcher warns. The awake and unlocked case gave no warning on 2026-11-16.
 - Run `--reset` after a forced crash (kill the launcher with SIGKILL); verify the panel restores and DeX ends.
 - Check whether `wm size` set by `--resolution` persists into a later session run without it. Add `wm size reset -d DISPLAY_ID` to cleanup only if it does.
 

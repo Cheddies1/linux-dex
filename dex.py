@@ -192,11 +192,12 @@ def phone_looks_locked(adb, serial):
                          for service in (['power'], ['window', 'policy']))
     except (OSError, subprocess.SubprocessError):
         return None
-    awake = re.search(r'mWakefulness=(\w+)', power)
+    # Per-power-group lines also report mWakefulness=<number>; only the global word form counts.
+    awake = re.search(r'mWakefulness=([A-Za-z]+)', power)
     keyguard = re.search(r'KeyguardServiceDelegate\s.*?showing=(true|false)', window, re.DOTALL)
     if (awake and awake.group(1) != 'Awake') or (keyguard and keyguard.group(1) == 'true'):
         return True
-    return False if awake or keyguard else None
+    return False if awake and keyguard else None
 
 
 def reset(adb, serial):
@@ -209,7 +210,10 @@ def reset(adb, serial):
                            capture_output=True)
             print(f'{name}: done')
         except (OSError, subprocess.SubprocessError) as exc:
+            output = (getattr(exc, 'stderr', None) or getattr(exc, 'stdout', None) or b'')[-500:]
             print(f'{name} failed: {exc}', file=sys.stderr)
+            if output.strip():
+                print(output.decode(errors='replace').rstrip(), file=sys.stderr)
             status = 1
     return status
 
@@ -228,14 +232,16 @@ def doctor(args):
         scrcpy = find_scrcpy(args.scrcpy)
         found = scrcpy_version(scrcpy)
         if found is None:
-            report('scrcpy', f'{scrcpy} (version unreadable)', True)
+            report('scrcpy', f'{scrcpy} (version unreadable; launch will warn and continue)')
+        elif found < MIN_SCRCPY:
+            report('scrcpy', f'{scrcpy} ({dotted(found)}); {dotted(MIN_SCRCPY)} or newer is required', True)
         else:
-            report('scrcpy', f'{scrcpy} ({dotted(found)})', found < MIN_SCRCPY)
+            report('scrcpy', f'{scrcpy} ({dotted(found)})')
     except (RuntimeError, OSError, subprocess.SubprocessError) as exc:
         report('scrcpy', exc, True)
     try:
         adb = find_adb(args.adb, scrcpy)
-        result = subprocess.run([adb, 'version'], capture_output=True, text=True, timeout=10)
+        result = subprocess.run([adb, 'version'], check=True, capture_output=True, text=True, timeout=10)
         report('adb', f'{adb} ({(result.stdout.splitlines() or ["version unknown"])[0]})')
     except (RuntimeError, OSError, subprocess.SubprocessError) as exc:
         report('adb', exc, True)
@@ -254,7 +260,7 @@ def doctor(args):
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 report('cache', f'{cache} (no launcher running)')
             except BlockingIOError:
-                report('cache', f'{cache} (a launcher is running)')
+                report('cache', f'{cache} (a launcher is running; finish it before launching)', True)
     except OSError as exc:
         report('cache', exc, True)
     if adb:

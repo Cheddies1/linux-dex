@@ -16,7 +16,7 @@ sha256sum ~/Applications/ScrcpyDex/scrcpydex-server.jar
 
 ## Launch and controls
 
-Unlock the handset before launch. Starting locked produced a blank viewer until Eddie woke and unlocked the phone. Automatic unlocking is not implemented. Before activation the launcher reads `dumpsys power` (`mWakefulness`) and `dumpsys window policy` (`KeyguardServiceDelegate` `showing=`), and warns if the phone looks asleep or locked. It never blocks a launch, and stays silent if the dumps cannot be read. This heuristic has mock coverage only; it has not been checked against real One UI output.
+Unlock the handset before launch. Starting locked produced a blank viewer until Eddie woke and unlocked the phone. Automatic unlocking is not implemented. Before activation the launcher reads `dumpsys power` (`mWakefulness`) and `dumpsys window policy` (`KeyguardServiceDelegate` `showing=`), and warns if the phone looks asleep or locked. It never blocks a launch, and stays silent if the dumps cannot be read. On the S24 Ultra (Android 17) on 2026-11-16, the dumps contained `mWakefulness=Awake` and `KeyguardServiceDelegate` / `showing=false` while awake and unlocked; the locked and asleep cases have mock coverage only.
 
 The Surface's tested display size is 1800x1200 (3:2). `--resolution 1800x1200` applies `wm size WIDTHxHEIGHT -d DISPLAY_ID` to the detected DeX display and removes scrcpy's capture size cap. It does not resize the handset display or change density. Without this option, DeX keeps its own resolution and capture is capped at 1920 pixels on the longest side. Window decorations can still introduce bars outside fullscreen.
 
