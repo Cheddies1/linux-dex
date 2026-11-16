@@ -42,7 +42,7 @@ If a session crashes and leaves the phone in DeX or with its panel dark, reconne
 
 ## Options and diagnostics
 
-Run `python3 dex.py --help` for all options. Defaults are a 30 fps cap, windowed display, unchanged DeX resolution and a 60-second re-blank interval. `--serial SERIAL` selects a phone when multiple USB devices are connected; `--adb`, `--scrcpy` and `--jar` override dependency discovery. `--scrcpy-arg` passes an extra option to the DeX viewer only and can be repeated, for example `--scrcpy-arg=--render-driver=opengl`; use the `=` form. The launcher selects USB devices only, even though wireless ADB was used during diagnosis.
+Run `python3 dex.py --help` for all options. Defaults are a 30 fps cap, windowed display, no resolution change and a 60-second re-blank interval. A size set with `--resolution` sticks: the phone reapplies it to later sessions until it is reset, so you only need the flag once ([details](docs/operations.md#launch-and-controls)). `--serial SERIAL` selects a phone when multiple USB devices are connected; `--adb`, `--scrcpy` and `--jar` override dependency discovery. `--scrcpy-arg` passes an extra option to the DeX viewer only and can be repeated, for example `--scrcpy-arg=--render-driver=opengl`; use the `=` form. The launcher selects USB devices only, even though wireless ADB was used during diagnosis.
 
 Session logs and the single-session lock live in `~/.cache/linux-dex/` (or `$XDG_CACHE_HOME/linux-dex/`). The newest 20 logs are kept. See [operations and recovery](docs/operations.md) for setup details, troubleshooting and cleanup behaviour.
 

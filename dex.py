@@ -397,7 +397,7 @@ def main():
     parser.add_argument('--jar', help='ScrcpyDex helper (default: scrcpydex-server.jar beside dex.py, '
                                       'then ~/Applications/ScrcpyDex/)')
     parser.add_argument('--timeout', type=float, default=30, help='Activation timeout in seconds (default: 30)')
-    parser.add_argument('--resolution', help='DeX virtual display size, e.g. 1800x1200')
+    parser.add_argument('--resolution', help='DeX virtual display size, e.g. 1800x1200; the phone keeps it for later sessions')
     parser.add_argument('--fullscreen', action='store_true', help='Start scrcpy in fullscreen mode')
     parser.add_argument('--max-fps', type=int, default=30, help='Video frame-rate cap (default: 30; try 60)')
     parser.add_argument('--phone-blank-interval', type=float, default=60,
