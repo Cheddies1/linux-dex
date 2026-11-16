@@ -8,7 +8,7 @@ Wired DeX worked at 1800x1200 fullscreen with Teams and Outlook in the work prof
 
 On 2026-11-16 the launcher at commit `3fb9a6a` ran on the Surface with no path flags. It found scrcpy 5.0.1 in `~/Applications`, adb at `/usr/lib/android-sdk/platform-tools/adb` and the helper in `~/Applications/ScrcpyDex/`, whose SHA-256 matched the inspected revision. `--doctor` listed the phone as USB, ignored a wireless connection to the same phone and reported it awake and unlocked. A session at 1800x1200 fullscreen and 60 fps then ran normally.
 
-A later session the same day, run without `--resolution`, still streamed at 1800x1200. With a third session running, `wm size -d` on the ScrcpyDex display (unique ID `wifi:desktop:00:11:22:33:44:55`, physical 1920x1080) reported `Override size: 1800x1200` and `Override density: 160` against a physical density of 320. The launcher never sets density, so the density override comes from DeX or the helper. The size override persisting is kept as intended behaviour for a laptop that always uses the same size.
+A later session the same day, run without `--resolution`, still streamed at 1800x1200. With a third session running, `wm size -d` on the ScrcpyDex display (unique ID `wifi:desktop:00:11:22:33:44:55`, physical 1920x1080) reported `Override size: 1800x1200` and `Override density: 160` against a physical density of 320. The launcher never sets density, so the density override comes from DeX or the helper. The size override persisting is kept as intended behaviour for a laptop that always uses the same size. With the Xreal One glasses then connected (display type `EXTERNAL`, unique ID `local:4626964578939494661`, 1920x1080), `wm size -d` reported no size override, so the ScrcpyDex size did not carry over to them. The glasses also showed `Override density: 160` against a physical density of 100, which supports DeX itself setting density.
 
 The later periodic re-blank timer has automated coverage and firmware command availability was checked, but its end-to-end phone behaviour remains unconfirmed. The earlier successful panel restoration used scrcpy alone, before the extra DisplayManager override was added.
 
@@ -45,6 +45,5 @@ Synthetic activity may delay automatic inactivity locking throughout the session
 - Test Fold 4 compatibility and pointer-setting persistence when needed.
 - Start with the phone locked and with it asleep; verify the launcher warns. The awake and unlocked case gave no warning on 2026-11-16.
 - Run `--reset` after a forced crash (kill the launcher with SIGKILL); verify the panel restores and DeX ends.
-- Connect the phone to the Xreal glasses or a monitor after a `--resolution` session; verify that display keeps its own resolution.
 
 Update this record only from observed results. Firmware updates may change the helper's Samsung APIs, display grouping or shell power commands.
